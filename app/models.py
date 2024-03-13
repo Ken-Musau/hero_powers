@@ -18,7 +18,7 @@ class Hero(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
 
-    hero_powers = db.relationship("HeroPower", backref="heroes")
+    hero_powers = db.relationship("HeroPower", backref="hero")
 
 
 class HeroPower(db.Model, SerializerMixin):
@@ -48,11 +48,12 @@ class Power(db.Model, SerializerMixin):
         db.CheckConstraint('length(description) <= 20'),
     )
 
-    serialize_rules = ("-hero_powers.power.",)
+    serialize_rules = ("-hero_powers.power",)
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     description = db.Column(db.String,  nullable=False)
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
 
-    hero_powers = db.relationship("HeroPower", backref="powers")
+    hero_powers = db.relationship("HeroPower", backref="power")
