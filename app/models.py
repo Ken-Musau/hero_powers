@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.orm import validates
+from sqlalchemy.schema import CheckConstraint
 
 
 db = SQLAlchemy()
@@ -32,18 +34,25 @@ class HeroPower(db.Model, SerializerMixin):
     hero_id = db.Column(db.Integer, db.ForeignKey("heroes.id"))
     power_id = db.Column(db.Integer, db.ForeignKey("powers.id"))
 
+    @validates("strength")
+    def validate_strength(self, key, strength):
+        strength_value = ['Strong', 'Weak', 'Average']
+        if strength not in strength_value:
+            raise ValueError("Must be either Strong, Weak, Average")
+        return strength
+
 
 class Power(db.Model, SerializerMixin):
     __tablename__ = "powers"
+    __table_args__ = (
+        db.CheckConstraint('length(description) <= 20'),
+    )
 
     serialize_rules = ("-hero_powers.power.",)
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    description = db.Column(db.String)
+    description = db.Column(db.String,  nullable=False)
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
 
     hero_powers = db.relationship("HeroPower", backref="powers")
-
-
-# add any models you may need.
