@@ -19,24 +19,48 @@ api = Api(app)
 ma = Marshmallow(app)
 
 
+class PowerSchema(ma.Schema):
+    class Meta:
+        model = Power
+        fields = ("id", "name", "description")
+
+
+power_schema = PowerSchema()
+powers_schema = PowerSchema(many=True)
+
+
 class HeroSchema(ma.Schema):
     class Meta:
         model = Hero
 
         fields = ("id", "name", "super_name")
-    # id = ma.auto_field()
-    # name = ma.auto_field()
-    # super_name = ma.auto_field()
-    _links = ma.Hyperlinks(
-        {
-            "self": ma.URLFor("heroesbyid", values=dict(id="<id>")),
-            "collection": ma.URLFor("heroes"),
-        }
-    )
 
 
 hero_schema = HeroSchema()
 heroes_schema = HeroSchema(many=True)
+
+
+class HeroPowerSchema(ma.Schema):
+    class Meta:
+        model = HeroPower
+        fields = ("id", "strength", "hero_id", "power_id")
+
+
+heropower_schema = HeroPowerSchema()
+heropowers_schema = HeroPowerSchema(many=True)
+
+
+class HeroWithPowersSchema(ma.Schema):
+    class Meta:
+        model = Hero
+        fields = ("id", "name", "super_name", "powers")
+
+    powers = ma.Nested("PowerSchema", many=True, only=(
+        "id", "name", "description"), attribute="hero_powers")
+
+
+hero_with_powers_schema = HeroWithPowersSchema()
+heroes_with_powers_schema = HeroWithPowersSchema(many=True)
 
 
 class Home(Resource):
@@ -54,13 +78,15 @@ class HeroesById(Resource):
     def get(self, id):
         hero = Hero.query.filter_by(id=id).first()
 
-        return make_response(jsonify(hero.to_dict()), 200)
+        if hero:
+            return make_response(hero_with_powers_schema.dump(hero), 200)
+        return make_response({'error': "Hero not found"})
 
 
 class Powers(Resource):
     def get(self):
-        powers = [power.to_dict() for power in Power.query.all()]
-        return make_response(jsonify(powers), 200)
+        powers = Power.query.all()
+        return make_response(powers_schema.dump(powers), 200)
 
 
 class powerById(Resource):
@@ -72,9 +98,9 @@ class powerById(Resource):
 
 class HeroPowers(Resource):
     def get(self):
-        heroPowers = [heroPower.to_dict()
+        heroPowers = [heroPower
                       for heroPower in HeroPower.query.all()]
-        return make_response(jsonify(heroPowers), 200)
+        return make_response(heropowers_schema.dump(heroPowers), 200)
 
 
 class HeroPowerById(Resource):
