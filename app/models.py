@@ -18,7 +18,9 @@ class Hero(db.Model):
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
 
-    hero_powers = db.relationship("HeroPower", backref="hero")
+    # hero_powers = db.relationship("HeroPower", backref="hero")
+
+    hero_powers = db.relationship("HeroPower", back_populates="hero")
 
 
 class HeroPower(db.Model):
@@ -33,6 +35,9 @@ class HeroPower(db.Model):
 
     hero_id = db.Column(db.Integer, db.ForeignKey("heroes.id"))
     power_id = db.Column(db.Integer, db.ForeignKey("powers.id"))
+
+    power = db.relationship("Power", back_populates="hero_powers")
+    hero = db.relationship("Hero", back_populates="hero_powers")
 
     @validates("strength")
     def validate_strength(self, key, strength):
@@ -56,4 +61,6 @@ class Power(db.Model):
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
 
-    hero_powers = db.relationship("HeroPower", backref="power")
+    # hero_powers = db.relationship("HeroPower", backref="power")
+
+    hero_powers = db.relationship("HeroPower", back_populates="power")

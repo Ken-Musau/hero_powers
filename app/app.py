@@ -53,10 +53,10 @@ heropowers_schema = HeroPowerSchema(many=True)
 class HeroWithPowersSchema(ma.Schema):
     class Meta:
         model = Hero
-        fields = ("id", "name", "super_name", "powers")
+        fields = ("id", "name", "super_name", "hero_powers")
 
-    powers = ma.Nested("PowerSchema", many=True, only=(
-        "id", "name", "description"), attribute="hero_powers")
+    hero_powers = ma.Nested("HeroPowerSchema", many=True, only=(
+        "id", "strength"))
 
 
 hero_with_powers_schema = HeroWithPowersSchema()
@@ -93,7 +93,7 @@ class powerById(Resource):
     def get(self, id):
         power = Power.query.filter_by(id=id).first()
 
-        return make_response(jsonify(power.to_dict()), 200)
+        return make_response(power_schema.dump(power), 200)
 
 
 class HeroPowers(Resource):
