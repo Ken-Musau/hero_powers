@@ -2,17 +2,41 @@
 from flask_restful import Api, Resource
 from flask import Flask, jsonify, make_response
 from flask_migrate import Migrate
+from flask_marshmallow import Marshmallow
 
 from models import db, Hero, Power, HeroPower
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.json.compact = False
 
 migrate = Migrate(app, db)
 
 db.init_app(app)
 api = Api(app)
+
+ma = Marshmallow(app)
+
+
+class HeroSchema(ma.Schema):
+    class Meta:
+        model = Hero
+
+        fields = ("id", "name", "super_name")
+    # id = ma.auto_field()
+    # name = ma.auto_field()
+    # super_name = ma.auto_field()
+    _links = ma.Hyperlinks(
+        {
+            "self": ma.URLFor("heroesbyid", values=dict(id="<id>")),
+            "collection": ma.URLFor("heroes"),
+        }
+    )
+
+
+hero_schema = HeroSchema()
+heroes_schema = HeroSchema(many=True)
 
 
 class Home(Resource):
@@ -22,11 +46,11 @@ class Home(Resource):
 
 class Heroes(Resource):
     def get(self):
-        heroes = [hero.to_dict() for hero in Hero.query.all()]
-        return make_response(jsonify(heroes), 200)
+        heroes = [hero for hero in Hero.query.all()]
+        return make_response(heroes_schema.dump(heroes), 200)
 
 
-class HeroById(Resource):
+class HeroesById(Resource):
     def get(self, id):
         hero = Hero.query.filter_by(id=id).first()
 
@@ -62,7 +86,7 @@ class HeroPowerById(Resource):
 
 api.add_resource(Home, "/")
 api.add_resource(Heroes, "/heroes")
-api.add_resource(HeroById, "/heroes/<int:id>")
+api.add_resource(HeroesById, "/heroes/<int:id>")
 api.add_resource(Powers, "/powers")
 api.add_resource(powerById, "/powers/<int:id>")
 api.add_resource(HeroPowers, "/hero_powers")

@@ -1,16 +1,16 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy_serializer import SerializerMixin
+# from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.orm import validates
-from sqlalchemy.schema import CheckConstraint
+# from sqlalchemy.schema import CheckConstraint
 
 
 db = SQLAlchemy()
 
 
-class Hero(db.Model, SerializerMixin):
+class Hero(db.Model):
     __tablename__ = 'heroes'
 
-    serialize_rules = ("-hero_powers.hero",)
+    # serialize_rules = ("-hero_powers.hero",)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -21,10 +21,10 @@ class Hero(db.Model, SerializerMixin):
     hero_powers = db.relationship("HeroPower", backref="hero")
 
 
-class HeroPower(db.Model, SerializerMixin):
+class HeroPower(db.Model):
     __tablename__ = "hero_powers"
 
-    serialize_rules = ("-power.hero_powers", "-hero.hero_powers",)
+    # serialize_rules = ("-power.hero_powers", "-hero.hero_powers",)
 
     id = db.Column(db.Integer, primary_key=True)
     strength = db.Column(db.String)
@@ -42,13 +42,13 @@ class HeroPower(db.Model, SerializerMixin):
         return strength
 
 
-class Power(db.Model, SerializerMixin):
+class Power(db.Model):
     __tablename__ = "powers"
     __table_args__ = (
         db.CheckConstraint('length(description) <= 20'),
     )
 
-    serialize_rules = ("-hero_powers.power",)
+    # serialize_rules = ("-hero_powers.power",)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
