@@ -80,6 +80,15 @@ class HeroesById(Resource):
 
         return make_response({'error': "Hero not found"}, 404)
 
+    def delete(self, id):
+        hero = Hero.query.filter_by(id=id).first()
+
+        if hero:
+            db.session.delete(hero)
+            db.session.commit()
+            return make_response(["Hero has been deleted"], 200)
+        return make_response(jsonify({"error": "Hero not found"}), 404)
+
 
 class Powers(Resource):
     def get(self):
@@ -154,7 +163,13 @@ class HeroPowers(Resource):
 
             hero = Hero.query.filter(Hero.id == heroPower.hero_id).first()
 
-            return make_response(hero_with_powers_schema.dump(hero), 201)
+            hero_powers = hero.hero_powers
+
+            powers = [hero_power.power for hero_power in hero_powers]
+            serialized_hero = hero_schema.dump(hero)
+            serialized_hero["powers"] = powers_schema.dump(powers)
+
+            return make_response(jsonify(serialized_hero), 201)
 
         except ValueError as e:
             return make_response(jsonify({"message": str(e)}), 400)
@@ -164,7 +179,16 @@ class HeroPowerById(Resource):
     def get(self, id):
         heroPower = HeroPower.query.filter_by(id=id).first()
 
-        return make_response(jsonify(heroPower.to_dict()), 200)
+        return make_response(jsonify(heropower_schema.dump(heroPower)), 200)
+
+    def delete(self, id):
+        heroPower = HeroPower.query.filter_by(id=id).first()
+
+        if heroPower:
+            db.session.delete(heroPower)
+            db.session.commit()
+            return make_response(["Hero_Power succesful deleted"])
+        return make_response(jsonify({"error": "Hero_power not found"}), 404)
 
 
 api.add_resource(Home, "/")

@@ -20,7 +20,8 @@ class Hero(db.Model):
 
     # hero_powers = db.relationship("HeroPower", backref="hero")
 
-    hero_powers = db.relationship("HeroPower", back_populates="hero")
+    hero_powers = db.relationship(
+        "HeroPower", back_populates="hero", cascade="all, delete-orphan")
 
 
 class HeroPower(db.Model):
@@ -66,4 +67,5 @@ class Power(db.Model):
 
     # hero_powers = db.relationship("HeroPower", backref="power")
 
-    hero_powers = db.relationship("HeroPower", back_populates="power")
+    hero_powers = db.relationship(
+        "HeroPower", back_populates="power", cascade="all, delete-orphan")
