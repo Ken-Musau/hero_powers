@@ -43,15 +43,12 @@ class HeroPower(db.Model):
     def validate_strength(self, key, strength):
         strength_value = ['Strong', 'Weak', 'Average']
         if strength not in strength_value:
-            raise ValueError("Must be either Strong, Weak, Average")
+            raise ValueError("Strength must be either Strong, Weak, Average")
         return strength
 
 
 class Power(db.Model):
     __tablename__ = "powers"
-    __table_args__ = (
-        db.CheckConstraint('length(description) <= 20'),
-    )
 
     # serialize_rules = ("-hero_powers.power",)
 
@@ -60,6 +57,12 @@ class Power(db.Model):
     description = db.Column(db.String,  nullable=False)
     created_at = db.Column(db.DateTime(), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(), onupdate=db.func.now())
+
+    @validates("description")
+    def validate_description(self, key, description):
+        if len(description) < 20:
+            raise ValueError("Description must be more than 20 characters")
+        return description
 
     # hero_powers = db.relationship("HeroPower", backref="power")
 

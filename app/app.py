@@ -50,19 +50,6 @@ heropower_schema = HeroPowerSchema()
 heropowers_schema = HeroPowerSchema(many=True)
 
 
-class HeroWithPowersSchema(ma.Schema):
-    class Meta:
-        model = Hero
-        fields = ("id", "name", "super_name", "powers")
-
-    powers = ma.Nested("PowerSchema", many=True, only=(
-        "id", "name"), attribute="hero_powers")
-
-
-hero_with_powers_schema = HeroWithPowersSchema()
-heroes_with_powers_schema = HeroWithPowersSchema(many=True)
-
-
 class Home(Resource):
     def get(self):
         return make_response("<h1>Welcome to Power Hero API</h1>")
@@ -79,7 +66,18 @@ class HeroesById(Resource):
         hero = Hero.query.filter_by(id=id).first()
 
         if hero:
-            return make_response(hero_with_powers_schema.dump(hero), 200)
+            # Fetch hero_powers associated with the hero
+            hero_powers = hero.hero_powers
+
+            # Extract power details from hero_powers
+            powers = [hero_power.power for hero_power in hero_powers]
+
+            # Serialize the hero along with associated powers
+            serialized_hero = hero_schema.dump(hero)
+            serialized_hero["powers"] = powers_schema.dump(powers)
+
+            return make_response(jsonify(serialized_hero), 200)
+
         return make_response({'error': "Hero not found"}, 404)
 
 
@@ -91,15 +89,19 @@ class Powers(Resource):
     def post(self):
         data = request.get_json()
 
-        power = Power(
-            name=data.get("name"),
-            description=data.get("description")
-        )
+        try:
+            power = Power(
+                name=data.get("name"),
+                description=data.get("description")
+            )
 
-        db.session.add(power)
-        db.session.commit()
+            db.session.add(power)
+            db.session.commit()
 
-        return make_response(power_schema.dump(power), 201)
+            return make_response(power_schema.dump(power), 201)
+
+        except ValueError as e:
+            return make_response(jsonify({"message": str(e)}), 400)
 
 
 class PowerById(Resource):
@@ -122,12 +124,40 @@ class PowerById(Resource):
         if power:
             return make_response(power_schema.dump(power), 200)
 
+    def delete(self, id):
+        power = Power.query.filter_by(id=id).first()
+        db.session.delete(power)
+        db.session.commit()
+
+        return make_response(["Power Succesfully deleted"], 200)
+
 
 class HeroPowers(Resource):
     def get(self):
         heroPowers = [heroPower
                       for heroPower in HeroPower.query.all()]
         return make_response(heropowers_schema.dump(heroPowers), 200)
+
+    def post(self):
+        data = request.get_json()
+
+        try:
+
+            heroPower = HeroPower(
+                strength=data.get("strength"),
+                hero_id=data.get("hero_id"),
+                power_id=data.get("power_id")
+
+            )
+            db.session.add(heroPower)
+            db.session.commit()
+
+            hero = Hero.query.filter(Hero.id == heroPower.hero_id).first()
+
+            return make_response(hero_with_powers_schema.dump(hero), 201)
+
+        except ValueError as e:
+            return make_response(jsonify({"message": str(e)}), 400)
 
 
 class HeroPowerById(Resource):
