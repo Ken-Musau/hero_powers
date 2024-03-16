@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from flask_restful import Api, Resource
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
 from flask_migrate import Migrate
 from flask_marshmallow import Marshmallow
 
@@ -80,7 +80,7 @@ class HeroesById(Resource):
 
         if hero:
             return make_response(hero_with_powers_schema.dump(hero), 200)
-        return make_response({'error': "Hero not found"})
+        return make_response({'error': "Hero not found"}, 404)
 
 
 class Powers(Resource):
@@ -88,14 +88,39 @@ class Powers(Resource):
         powers = Power.query.all()
         return make_response(powers_schema.dump(powers), 200)
 
+    def post(self):
+        data = request.get_json()
 
-class powerById(Resource):
+        power = Power(
+            name=data.get("name"),
+            description=data.get("description")
+        )
+
+        db.session.add(power)
+        db.session.commit()
+
+        return make_response(power_schema.dump(power), 201)
+
+
+class PowerById(Resource):
     def get(self, id):
         power = Power.query.filter_by(id=id).first()
 
         if power:
             return make_response(power_schema.dump(power), 200)
         return make_response({"error": "Power not found"}, 404)
+
+    def patch(self, id):
+        power = Power.query.filter_by(id=id).first()
+        data = request.get_json()
+
+        for attr, value in data.items():
+            setattr(power, attr, value)
+
+        db.session.commit()
+
+        if power:
+            return make_response(power_schema.dump(power), 200)
 
 
 class HeroPowers(Resource):
@@ -116,7 +141,7 @@ api.add_resource(Home, "/")
 api.add_resource(Heroes, "/heroes")
 api.add_resource(HeroesById, "/heroes/<int:id>")
 api.add_resource(Powers, "/powers")
-api.add_resource(powerById, "/powers/<int:id>")
+api.add_resource(PowerById, "/powers/<int:id>")
 api.add_resource(HeroPowers, "/hero_powers")
 api.add_resource(HeroPowerById, "/hero_powers/<int:id>")
 
